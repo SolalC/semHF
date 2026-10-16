@@ -11,9 +11,9 @@ file_female  <- file.path(sumstats_dir, "gcta_ALL_HF_EU_FEMALE")
 file_male    <- file.path(sumstats_dir, "gcta_ALL_HF_EU_MALE")
 
 ## Genomic SEM / LDSC reference files (EDIT)
-hm3_snplist  <- "/path/to/w_hm3.snplist"
-ld_dir       <- "/path/to/eur_w_ld_chr/"               # keep trailing slash
-ref_1000g    <- "/path/to/reference.1000G.maf.0.005.txt"
+hm3_snplist  <- "/QRISdata/Q9564/LD/LDSC/GRCh37/eur_w_ld_chr/w_hm3.snplist"
+ld_dir       <- "/QRISdata/Q9564/LD/LDSC/GRCh37/eur_w_ld_chr/"   # keep trailing slash
+ref_1000g    <- "/QRISdata/Q9564/LD/1000G/GRCh37/reference.1000G.maf.0.005.txt.gz"   # gz read by data.table::fread (needs R.utils)
 
 ## Case/control counts per sex. Leave NA to estimate the effective N from the
 ## SEs (Neff = 4 / (2 p q se^2), median over common SNPs; ignores covariates).
