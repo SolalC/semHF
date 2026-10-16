@@ -2,7 +2,7 @@
 # Full pipeline, both orderings (F_specific, M_specific): 01 -> 02 -> 03 -> 04.
 set -euo pipefail
 cd /scratch/user/uqschauq/sem/Code
-mkdir -p /scratch/user/uqschauq/sem/hf_sex_gwas_by_subtraction/logs
+mkdir -p /scratch/user/uqschauq/sem/Code/logs
 j1=$(sbatch --parsable run_01.slurm)
 j2=$(sbatch --parsable --dependency=afterok:${j1} run_02.slurm)
 j3=$(sbatch --parsable --dependency=afterok:${j2} run_03.slurm)
