@@ -82,11 +82,29 @@ extract_significant <- function(d, label, factor, alpha = sig_alpha) {
   nrow(sig)
 }
 
+## Odds ratios. A factor effect is mapped back onto its trait: lambda * est is the
+## standardised (sumstats, se.logit) per-allele effect carried by that factor on the trait
+## (F1: lambda11 -> trait t1, i.e. beta_t1; F2: lambda22 -> trait t2, i.e. beta_t2 - b beta_t1).
+## sumstats() standardised log-ORs as beta = logOR / sqrt(logOR^2 v + pi^2/3), v = 2pq;
+## inverting gives logOR = beta (pi/sqrt(3)) / sqrt(1 - beta^2 v). SE by the delta method.
+add_or <- function(d, lambda) {
+  k <- pi / sqrt(3)
+  d %>% mutate(
+    v = 2 * MAF * (1 - MAF),
+    beta_trait = lambda * est, se_trait = lambda * SE,
+    logOR = beta_trait * k / sqrt(1 - beta_trait^2 * v),
+    se_logOR = se_trait * k * (1 - beta_trait^2 * v)^(-3 / 2),
+    OR = exp(logOR), OR_l95 = exp(logOR - 1.96 * se_logOR), OR_u95 = exp(logOR + 1.96 * se_logOR)
+  ) %>% select(-v)
+}
+
 qc <- imap_dfr(orderings, function(ord, label) {
   t1 <- ord[["t1"]]; t2 <- ord[["t2"]]
   pars <- chol_summary %>% filter(ordering == label)
 
   out <- map(c(F1 = "F1", F2 = "F2"), ~ combine_factor(label, .x))
+  out$F1 <- add_or(out$F1, pars$l11)   # OR of trait t1 (the subtracted trait)
+  out$F2 <- add_or(out$F2, pars$l22)   # OR of trait t2 not explained by t1 (sex-specific part)
   iwalk(out, ~ write_tsv(.x, str_glue("{label}_{.y}_genomewide.tsv.gz")))
   n_sig <- imap(out, ~ extract_significant(.x, label, .y))
 
