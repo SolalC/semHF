@@ -1,6 +1,7 @@
 ## 04: Miami plots, all on the same y-scale.
 ##   {ordering}_miami : F1 (shared factor) on top, F2 (sex-specific factor) below, per ordering
 ##   F1_miami, F2_miami : the same factor, female-specific ordering on top, male-specific below
+## F2_miami has its own y-scale (sex-specific signal is weak); the other plots share one.
 suppressPackageStartupMessages({ library(tidyverse) })
 source(Sys.getenv("HF_GSEM_CONFIG", "00_config.R"))
 setwd(out_dir)
@@ -50,7 +51,8 @@ if (!is.na(y_cap)) message(sum(all_d$logp > y_cap), " SNP rows above y_cap = ", 
 chr_len <- all_d %>% group_by(CHR) %>% summarise(len = max(BP), .groups = "drop") %>%
   arrange(CHR) %>% mutate(offset = lag(cumsum(as.numeric(len)), default = 0),
                           mid = offset + len / 2)
-ymax <- max(if (is.na(y_cap)) max(all_d$logp) else min(max(all_d$logp), y_cap), -log10(5e-8)) * 1.15
+scale_max <- function(logp) max(if (is.na(y_cap)) max(logp) else min(max(logp), y_cap), -log10(5e-8)) * 1.15
+ymax_shared <- scale_max(all_d$logp)
 rm(all_d)
 
 get_d <- function(ord, f) res$data[[which(res$ordering == ord & res$factor == f)]]
@@ -62,7 +64,7 @@ panel_label <- function(ord, f) {
 }
 
 ## ---- one Miami plot -----------------------------------------------------------
-miami <- function(top, bottom, lab_top, lab_bot, file) {
+miami <- function(top, bottom, lab_top, lab_bot, file, ymax = ymax_shared) {
   d <- bind_rows(top = top, bottom = bottom, .id = "panel")
   if (!is.na(y_cap)) d <- mutate(d, capped = logp > y_cap, logp = pmin(logp, y_cap))
   else d <- mutate(d, capped = FALSE)
@@ -119,8 +121,9 @@ for (ord in names(orderings)) {
 ## Per factor: female-specific ordering on top, male-specific below
 if (all(c("F_specific", "M_specific") %in% names(orderings))) {
   for (f in c("F1", "F2")) {
-    miami(get_d("F_specific", f), get_d("M_specific", f),
-          panel_label("F_specific", f), panel_label("M_specific", f), str_glue("{f}_miami"))
+    top <- get_d("F_specific", f); bottom <- get_d("M_specific", f)
+    miami(top, bottom, panel_label("F_specific", f), panel_label("M_specific", f), str_glue("{f}_miami"),
+          ymax = if (f == "F2") scale_max(c(top$logp, bottom$logp)) else ymax_shared)
   }
 }
-message("All plots share the y-axis: 0 to ", round(ymax, 1))
+message("Shared y-axis: 0 to ", round(ymax_shared, 1), " (F2_miami uses its own)")
