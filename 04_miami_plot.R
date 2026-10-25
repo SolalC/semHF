@@ -59,8 +59,8 @@ get_d <- function(ord, f) res$data[[which(res$ordering == ord & res$factor == f)
 
 panel_label <- function(ord, f) {
   o <- orderings[[ord]]
-  if (f == "F1") str_glue("{ord} F1: shared factor ({o[['t1']]} scaled)")
-  else           str_glue("{ord} F2: {o[['t2']]}-specific factor")
+  if (f == "F1") str_glue("{subset}, {ord} F1: shared factor ({o[['t1']]} scaled)")
+  else           str_glue("{subset}, {ord} F2: {o[['t2']]}-specific factor")
 }
 
 ## ---- one Miami plot -----------------------------------------------------------

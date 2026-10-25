@@ -5,26 +5,43 @@
 
 ## ---- USER SETTINGS ---------------------------------------------------------
 sumstats_dir <- "/QRISdata/Q4486/gwas_cvd_sumstats/HF_sex_stratified_CJ/20260609"
-out_dir      <- "/scratch/user/uqschauq/sem/hf_sex_gwas_by_subtraction"   # all outputs
+out_base     <- "/scratch/user/uqschauq/sem/hf_sex_gwas_by_subtraction"   # one subfolder per subset
 
-file_female  <- file.path(sumstats_dir, "gcta_ALL_HF_EU_FEMALE")
-file_male    <- file.path(sumstats_dir, "gcta_ALL_HF_EU_MALE")
+## HF subsets. Each runs the same female-vs-male subtraction on
+## gcta_{subset}_HF_EU_FEMALE and gcta_{subset}_HF_EU_MALE. The subset for a run comes
+## from the environment (HF_GSEM_SUBSET, set by submit_all.sh); default ALL.
+subsets <- c("ALL", "I", "NI")
+subset  <- Sys.getenv("HF_GSEM_SUBSET", "ALL"); if (!nzchar(subset)) subset <- "ALL"
+stopifnot(subset %in% subsets)
+out_dir     <- file.path(out_base, subset)
+file_female <- file.path(sumstats_dir, paste0("gcta_", subset, "_HF_EU_FEMALE"))
+file_male   <- file.path(sumstats_dir, paste0("gcta_", subset, "_HF_EU_MALE"))
 
 ## Genomic SEM / LDSC reference files (EDIT)
 hm3_snplist  <- "/QRISdata/Q9564/LD/LDSC/GRCh37/eur_w_ld_chr/w_hm3.snplist"
 ld_dir       <- "/QRISdata/Q9564/LD/LDSC/GRCh37/eur_w_ld_chr/"   # keep trailing slash
 ref_1000g    <- "/QRISdata/Q9564/LD/1000G/GRCh37/reference.1000G.maf.0.005.txt.gz"   # gz read by data.table::fread (needs R.utils)
 
-## Case/control counts per sex. Leave NA to estimate the effective N from the
-## SEs (Neff = 4 / (2 p q se^2), median over common SNPs; ignores covariates).
-ncase_female <- NA; ncontrol_female <- NA
-ncase_male   <- NA; ncontrol_male   <- NA
+## Case/control counts per subset and sex. Leave NA to estimate the effective N from
+## the SEs (Neff = 4 / (2 p q se^2), median over common SNPs; ignores covariates).
+counts <- list(            # c(ncase_female, ncontrol_female, ncase_male, ncontrol_male)
+  ALL = c(NA, NA, NA, NA),
+  I   = c(NA, NA, NA, NA),
+  NI  = c(NA, NA, NA, NA)
+)
+ncase_female <- counts[[subset]][1]; ncontrol_female <- counts[[subset]][2]
+ncase_male   <- counts[[subset]][3]; ncontrol_male   <- counts[[subset]][4]
 
-## Population prevalence of HF by sex, for the liability-scale conversion.
-## Leave NA to work on the observed scale. SNP-level z-statistics of the
-## subtraction factor do not depend on this choice; h2 and loadings do.
-pop_prev_female <- NA
-pop_prev_male   <- NA
+## Population prevalence per subset and sex, for the liability-scale conversion.
+## Leave NA to work on the observed scale. h2, loadings, b and the F2 odds ratios
+## depend on this choice; with different prevalences by sex, so do the F2 z-statistics.
+pop_prev <- list(          # c(female, male)
+  ALL = c(NA, NA),
+  I   = c(NA, NA),
+  NI  = c(NA, NA)
+)
+pop_prev_female <- pop_prev[[subset]][1]
+pop_prev_male   <- pop_prev[[subset]][2]
 
 maf_filter  <- 0.01
 sig_alpha   <- 1e-6     # threshold for extracting SNPs (1e-6 = suggestive; 5e-8 = genome-wide)
