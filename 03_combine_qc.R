@@ -123,6 +123,11 @@ qc <- imap_dfr(orderings, function(ord, label) {
            n_smoothed_dropped = if ("Z_smooth" %in% names(d_all)) sum(d_all$Z_smooth > z_smooth_max, na.rm = TRUE) else NA_integer_,
            n_pass = nrow(d),
            lambda_gc = median(d$Z_Estimate^2, na.rm = TRUE) / qchisq(0.5, 1),
+           ## Effective N of the factor GWAS (Mallard et al. 2022, Genomic SEM wiki):
+           ## mean of 1 / (2pq SE^2) over SNPs with 0.1 <= MAF <= 0.4. Use this, not the
+           ## input GWAS N, for MAGMA / FUMA / LDSC on the factor sumstats.
+           neff_factor = with(filter(d, MAF >= 0.1, MAF <= 0.4, SE > 0),
+                              mean(1 / (2 * MAF * (1 - MAF) * SE^2), na.rm = TRUE)),
            n_p_5e8 = sum(d$Pval_Estimate < 5e-8, na.rm = TRUE),
            sig_alpha = sig_alpha,
            n_p_sig_alpha = n_sig[[f]])
