@@ -128,6 +128,12 @@ qc <- imap_dfr(orderings, function(ord, label) {
            ## input GWAS N, for MAGMA / FUMA / LDSC on the factor sumstats.
            neff_factor = with(filter(d, MAF >= 0.1, MAF <= 0.4, SE > 0),
                               mean(1 / (2 * MAF * (1 - MAF) * SE^2), na.rm = TRUE)),
+           ## N on the trait scale, i.e. the precision of the z itself (does not depend on
+           ## lambda): F1 = Neff of the subtracted trait; F2 = N of the weighted difference
+           ## test beta_t2 - b beta_t1, 1 / (1/N_t2 + b^2/N_t1) (no sample overlap). Use this for
+           ## MAGMA when h2_specific is ~0 and neff_factor is unstable.
+           n_trait_scale = if (f == "F1") pars$neff_subtracted
+                           else 1 / (1 / pars$neff_residual + pars$b^2 / pars$neff_subtracted),
            n_p_5e8 = sum(d$Pval_Estimate < 5e-8, na.rm = TRUE),
            sig_alpha = sig_alpha,
            n_p_sig_alpha = n_sig[[f]])
